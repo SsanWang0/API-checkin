@@ -1,0 +1,44 @@
+name: DIAG-TG
+on: workflow_dispatch
+
+jobs:
+  tg:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: 从 runner 打一次 Telegram API
+        env:
+          TOK: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python3 - <<'PYEOF'
+          import os, json, urllib.request, urllib.error
+
+          tok = os.environ.get("TOK", "")
+          chat = os.environ.get("CHAT", "")
+          print("token 长度 =", len(tok), "| chat_id =", chat)
+
+          def call(method, payload=None):
+              url = f"https://api.telegram.org/bot{tok}/{method}"
+              data = json.dumps(payload).encode() if payload else None
+              req = urllib.request.Request(
+                  url, data=data,
+                  headers={"Content-Type": "application/json"} if data else {})
+              try:
+                  r = urllib.request.urlopen(req, timeout=25)
+                  return r.status, r.read().decode()
+              except urllib.error.HTTPError as e:
+                  return e.code, e.read().decode()
+              except Exception as e:
+                  return None, f"{type(e).__name__}: {e}"
+
+          s, b = call("getMe")
+          print("getMe  ->", s, b[:160])
+
+          s, b = call("sendMessage", {
+              "chat_id": chat,
+              "parse_mode": "HTML",
+              "text": "<b>AnyRouter 签到</b>\n\n✅ 通知链路已验证\n这条消息从 GitHub runner 发出（不是本机）。\n\n今后只有<b>签到失败</b>或<b>余额变化</b>时才会收到通知。",
+          })
+          print("sendMessage ->", s, b[:200])
+          PYEOF
