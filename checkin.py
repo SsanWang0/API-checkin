@@ -491,7 +491,6 @@ async def main():
 	total_count = len(accounts)
 	current_balances = {}
 	account_check_in_details = {}
-	need_notify = False
 
 	for i, account in enumerate(accounts):
 		account_key = f'account_{i + 1}'
@@ -500,8 +499,7 @@ async def main():
 			if success:
 				success_count += 1
 			else:
-				need_notify = True
-				print(f'[NOTIFY] {account.get_display_name(i)} failed, will send notification')
+				print(f'[NOTIFY] {account.get_display_name(i)} failed, will be reported')
 
 			detail = {
 				'name': account.get_display_name(i),
@@ -532,7 +530,6 @@ async def main():
 		except Exception as e:
 			account_name = account.get_display_name(i)
 			print(f'[FAILED] {account_name} processing exception: {e}')
-			need_notify = True
 			account_check_in_details[account_key] = {
 				'name': account_name,
 				'provider': account.provider,
@@ -543,17 +540,15 @@ async def main():
 	current_balance_hash = generate_balance_hash(current_balances) if current_balances else None
 	if current_balance_hash:
 		if last_balance_hash is None:
-			need_notify = True
 			print('[NOTIFY] First run detected, will send notification with current balances')
 		elif current_balance_hash != last_balance_hash:
-			need_notify = True
 			print('[NOTIFY] Balance changes detected, will send notification')
 		else:
 			print('[INFO] No balance changes detected')
 
 		save_balance_hash(current_balance_hash)
 
-	if need_notify and account_check_in_details:
+	if account_check_in_details:
 		notification_lines = [
 			format_account_notification(account_check_in_details[f'account_{i + 1}'])
 			for i in range(len(accounts))
@@ -578,9 +573,9 @@ async def main():
 
 		print(notify_content)
 		notify.push_message('AnyRouter Check-in Alert', notify_content, msg_type='text')
-		print('[NOTIFY] Notification sent due to failures or balance changes')
+		print('[NOTIFY] Notification sent')
 	else:
-		print('[INFO] All accounts successful and no balance changes detected, notification skipped')
+		print('[INFO] No account results collected, notification skipped')
 
 	sys.exit(0 if success_count > 0 else 1)
 
