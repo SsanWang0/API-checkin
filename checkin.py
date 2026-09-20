@@ -320,7 +320,9 @@ def format_account_notification(detail: dict) -> str:
 	account_name = detail['name']
 	if detail['success']:
 		reward = detail['check_in_reward']
-		reward_symbol = '+' if reward > 0 else ''
+		if reward == 0:
+			reward = 0.0  # 归一 -0.0，否则会渲染成 "-$0.00"
+		reward_symbol = '+' if reward >= 0 else ''
 		return f'{account_name}-签到成功-{reward_symbol}${reward:.2f}'
 
 	reason = str(detail.get('error') or 'Unknown error')
