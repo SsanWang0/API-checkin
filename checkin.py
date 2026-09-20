@@ -560,8 +560,8 @@ async def main():
 			if f'account_{i + 1}' in account_check_in_details
 		]
 
-		summary = f'成功 {success_count}/{total_count}'
-		providers = list(dict.fromkeys(account.provider for account in accounts))
+		summary = f'--成功 {success_count}/{total_count}--'
+		providers = [f'--{name}--' for name in dict.fromkeys(account.provider for account in accounts)]
 		notify_content = '\n'.join([*providers, *notification_lines, summary])
 
 		screenshot_paths = take_pending_screenshots() if is_debug_enabled() else []
